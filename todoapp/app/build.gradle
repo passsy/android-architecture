@@ -71,6 +71,9 @@ dependencies {
     compile "com.android.support.test.espresso:espresso-idling-resource:$rootProject.espressoVersion"
     compile "com.google.guava:guava:$rootProject.guavaVersion"
 
+    // dependency for the ThirtyInch MVP library
+    compile "net.grandcentrix.thirtyinch:thirtyinch:$rootProject.ext.thirtyinchVersion"
+
     // Dependencies for local unit tests
     testCompile "junit:junit:$rootProject.ext.junitVersion"
     testCompile "org.mockito:mockito-all:$rootProject.ext.mockitoVersion"

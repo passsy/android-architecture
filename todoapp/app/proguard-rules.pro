@@ -25,3 +25,7 @@
 -dontwarn com.squareup.javawriter.JavaWriter
 # Uncomment this if you use Mockito
 -dontwarn org.mockito.**
+
+# ThirtyInch
+-keep class net.grandcentrix.thirtyinch.distinctuntilchanged.**
+-keep class net.grandcentrix.thirtyinch.callonmainthread.**
