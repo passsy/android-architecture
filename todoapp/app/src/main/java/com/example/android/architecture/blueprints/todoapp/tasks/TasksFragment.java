@@ -16,6 +16,11 @@
 
 package com.example.android.architecture.blueprints.todoapp.tasks;
 
+import com.example.android.architecture.blueprints.todoapp.R;
+import com.example.android.architecture.blueprints.todoapp.addedittask.AddEditTaskActivity;
+import com.example.android.architecture.blueprints.todoapp.data.Task;
+import com.example.android.architecture.blueprints.todoapp.taskdetail.TaskDetailActivity;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -39,11 +44,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.example.android.architecture.blueprints.todoapp.R;
-import com.example.android.architecture.blueprints.todoapp.addedittask.AddEditTaskActivity;
-import com.example.android.architecture.blueprints.todoapp.data.Task;
-import com.example.android.architecture.blueprints.todoapp.taskdetail.TaskDetailActivity;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +53,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Display a grid of {@link Task}s. User can choose to view all, active or completed tasks.
  */
 public class TasksFragment extends Fragment implements TasksContract.View {
+
+    public static final int REQUEST_ADD_TASK = 1;
 
     private TasksContract.Presenter mPresenter;
 
@@ -311,7 +313,7 @@ public class TasksFragment extends Fragment implements TasksContract.View {
     @Override
     public void showAddTask() {
         Intent intent = new Intent(getContext(), AddEditTaskActivity.class);
-        startActivityForResult(intent, AddEditTaskActivity.REQUEST_ADD_TASK);
+        startActivityForResult(intent, REQUEST_ADD_TASK);
     }
 
     @Override

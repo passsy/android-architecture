@@ -1,42 +1,90 @@
-/*
- * Copyright 2016, The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.example.android.architecture.blueprints.todoapp.addedittask;
 
-import android.os.Bundle;
-import android.support.annotation.VisibleForTesting;
-import android.support.test.espresso.IdlingResource;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 
 import com.example.android.architecture.blueprints.todoapp.Injection;
 import com.example.android.architecture.blueprints.todoapp.R;
-import com.example.android.architecture.blueprints.todoapp.util.ActivityUtils;
-import com.example.android.architecture.blueprints.todoapp.util.EspressoIdlingResource;
+import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository;
+
+import net.grandcentrix.thirtyinch.TiActivity;
+
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.support.v4.widget.ContentLoadingProgressBar;
+import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.TextView;
 
 /**
  * Displays an add or edit task screen.
  */
-public class AddEditTaskActivity extends AppCompatActivity {
+public class AddEditTaskActivity
+        extends TiActivity<AddEditTaskPresenter, AddEditTaskNewView>
+        implements AddEditTaskNewView {
 
-    public static final int REQUEST_ADD_TASK = 1;
+    public static final String ARGUMENT_EDIT_TASK_ID = "EDIT_TASK_ID";
+
+    private TextView mDescription;
+
+    private FloatingActionButton mFab;
+
+    private ContentLoadingProgressBar mLoadingIndicator;
+
+    private TextView mTitle;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public boolean onSupportNavigateUp() {
+        supportFinishAfterTransition();
+        return true;
+    }
+
+    @NonNull
+    @Override
+    public AddEditTaskPresenter providePresenter() {
+        final String taskId = getIntent()
+                .getStringExtra(AddEditTaskActivity.ARGUMENT_EDIT_TASK_ID);
+        final TasksRepository tasksRepository = Injection
+                .provideTasksRepository(getApplicationContext());
+
+        return new AddEditTaskPresenter(taskId, tasksRepository);
+    }
+
+    @Override
+    public void setDescription(String description) {
+        mDescription.setText(description);
+    }
+
+    @Override
+    public void setTitle(String title) {
+        mTitle.setText(title);
+    }
+
+    @Override
+    public void showEmptyTaskError() {
+        Snackbar.make(mTitle, getString(R.string.empty_task_message), Snackbar.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void showLoadingIndicator(final boolean show) {
+        mFab.setEnabled(!show);
+        if (show) {
+            mLoadingIndicator.show();
+        } else {
+            mLoadingIndicator.hide();
+        }
+    }
+
+    @Override
+    public void showTasksList() {
+        supportFinishAfterTransition();
+    }
+
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.addtask_act);
 
@@ -47,42 +95,57 @@ public class AddEditTaskActivity extends AppCompatActivity {
         actionBar.setDisplayHomeAsUpEnabled(true);
         actionBar.setDisplayShowHomeEnabled(true);
 
-        AddEditTaskFragment addEditTaskFragment =
-                (AddEditTaskFragment) getSupportFragmentManager().findFragmentById(R.id.contentFrame);
+        mTitle = (TextView) findViewById(R.id.add_task_title);
+        mDescription = (TextView) findViewById(R.id.add_task_description);
+        mLoadingIndicator = (ContentLoadingProgressBar) findViewById(
+                R.id.add_task_loading_indicator);
 
-        String taskId = getIntent().getStringExtra(AddEditTaskFragment.ARGUMENT_EDIT_TASK_ID);
+        mFab = (FloatingActionButton) findViewById(R.id.fab_edit_task_done);
+        mFab.setImageResource(R.drawable.ic_done);
+        mFab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getPresenter().saveTask();
+            }
+        });
 
-        if (addEditTaskFragment == null) {
-            addEditTaskFragment = AddEditTaskFragment.newInstance();
-
-            if (getIntent().hasExtra(AddEditTaskFragment.ARGUMENT_EDIT_TASK_ID)) {
-                actionBar.setTitle(R.string.edit_task);
-                Bundle bundle = new Bundle();
-                bundle.putString(AddEditTaskFragment.ARGUMENT_EDIT_TASK_ID, taskId);
-                addEditTaskFragment.setArguments(bundle);
-            } else {
-                actionBar.setTitle(R.string.add_task);
+        mDescription.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(final Editable s) {
+                getPresenter().onDescriptionChanges(s.toString());
             }
 
-            ActivityUtils.addFragmentToActivity(getSupportFragmentManager(),
-                    addEditTaskFragment, R.id.contentFrame);
-        }
+            @Override
+            public void beforeTextChanged(final CharSequence s, final int start, final int count,
+                    final int after) {
 
-        // Create the presenter
-        new AddEditTaskPresenter(
-                taskId,
-                Injection.provideTasksRepository(getApplicationContext()),
-                addEditTaskFragment);
+            }
+
+            @Override
+            public void onTextChanged(final CharSequence s, final int start, final int before,
+                    final int count) {
+
+            }
+        });
+
+        mTitle.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void afterTextChanged(final Editable s) {
+                getPresenter().onTitleChanges(s.toString());
+            }
+
+            @Override
+            public void beforeTextChanged(final CharSequence s, final int start, final int count,
+                    final int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(final CharSequence s, final int start, final int before,
+                    final int count) {
+
+            }
+        });
     }
 
-    @Override
-    public boolean onSupportNavigateUp() {
-        onBackPressed();
-        return true;
-    }
-
-    @VisibleForTesting
-    public IdlingResource getCountingIdlingResource() {
-        return EspressoIdlingResource.getIdlingResource();
-    }
 }

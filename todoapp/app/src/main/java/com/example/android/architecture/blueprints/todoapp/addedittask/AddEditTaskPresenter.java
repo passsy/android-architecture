@@ -1,121 +1,124 @@
-/*
- * Copyright 2016, The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.example.android.architecture.blueprints.todoapp.addedittask;
+
+
+import com.example.android.architecture.blueprints.todoapp.base.BaseTiPresenter;
+import com.example.android.architecture.blueprints.todoapp.base.NotifyChangeListener;
+import com.example.android.architecture.blueprints.todoapp.data.Task;
+import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.example.android.architecture.blueprints.todoapp.data.Task;
-import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Listens to user actions from the UI ({@link AddEditTaskFragment}), retrieves the data and updates
- * the UI as required.
- */
-public class AddEditTaskPresenter implements AddEditTaskContract.Presenter,
-        TasksDataSource.GetTaskCallback {
+class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
+
+    @Nullable
+    private final String mTaskId;
 
     @NonNull
     private final TasksDataSource mTasksRepository;
 
-    @NonNull
-    private final AddEditTaskContract.View mAddTaskView;
-
-    @Nullable
-    private String mTaskId;
+    private AddEditTaskViewModel mViewModel;
 
     /**
      * Creates a presenter for the add/edit view.
      *
-     * @param taskId ID of the task to edit or null for a new task
+     * @param taskId          ID of the task to edit or null for a new task
      * @param tasksRepository a repository of data for tasks
-     * @param addTaskView the add/edit view
      */
-    public AddEditTaskPresenter(@Nullable String taskId, @NonNull TasksDataSource tasksRepository,
-            @NonNull AddEditTaskContract.View addTaskView) {
+    public AddEditTaskPresenter(@Nullable String taskId,
+            @NonNull TasksDataSource tasksRepository) {
         mTaskId = taskId;
         mTasksRepository = checkNotNull(tasksRepository);
-        mAddTaskView = checkNotNull(addTaskView);
-
-        mAddTaskView.setPresenter(this);
     }
 
-    @Override
-    public void start() {
-        if (!isNewTask()) {
-            populateTask();
+    public void onDescriptionChanges(final String description) {
+        mViewModel.setDescription(description);
+    }
+
+    public void onTitleChanges(final String title) {
+        mViewModel.setTitle(title);
+    }
+
+
+    public void saveTask() {
+        final AddEditTaskNewView view = getView();
+        if (view == null) {
+            throw new IllegalStateException(
+                    "call this from the view, therefore view is expected to be non null");
         }
-    }
 
-    @Override
-    public void saveTask(String title, String description) {
-        if (isNewTask()) {
-            createTask(title, description);
+        final Task task = mViewModel.getOriginalTask();
+        if (task == null) {
+            // not loaded
+            view.showEmptyTaskError();
         } else {
-            updateTask(title, description);
-        }
-    }
+            // create new task with same id
+            final Task newTask = new Task(
+                    mViewModel.getTitle(),
+                    mViewModel.getDescription(),
+                    task.getId());
 
-    @Override
-    public void populateTask() {
-        if (isNewTask()) {
-            throw new RuntimeException("populateTask() was called but task is new.");
-        }
-        mTasksRepository.getTask(mTaskId, this);
-    }
+            if (newTask.isEmpty()) {
+                // no enough information
+                view.showEmptyTaskError();
+                return;
+            }
 
-    @Override
-    public void onTaskLoaded(Task task) {
-        // The view may not be able to handle UI updates anymore
-        if (mAddTaskView.isActive()) {
-            mAddTaskView.setTitle(task.getTitle());
-            mAddTaskView.setDescription(task.getDescription());
-        }
-    }
-
-    @Override
-    public void onDataNotAvailable() {
-        // The view may not be able to handle UI updates anymore
-        if (mAddTaskView.isActive()) {
-            mAddTaskView.showEmptyTaskError();
-        }
-    }
-
-    private boolean isNewTask() {
-        return mTaskId == null;
-    }
-
-    private void createTask(String title, String description) {
-        Task newTask = new Task(title, description);
-        if (newTask.isEmpty()) {
-            mAddTaskView.showEmptyTaskError();
-        } else {
             mTasksRepository.saveTask(newTask);
-            mAddTaskView.showTasksList();
+            view.showTasksList();
         }
     }
 
-    private void updateTask(String title, String description) {
-        if (isNewTask()) {
-            throw new RuntimeException("updateTask() was called but task is new.");
+    @Override
+    protected void onAttachView(@NonNull final AddEditTaskNewView view) {
+        super.onAttachView(view);
+
+        // immediately bind the viewmodel to the view, calls for every change
+        mViewModel.setOnChangeListener(new NotifyChangeListener<AddEditTaskViewModel>() {
+            @Override
+            public void onChange(final AddEditTaskViewModel addEditTaskViewModel) {
+                bindViewModel(view);
+            }
+        });
+    }
+
+    @Override
+    protected void onCreate() {
+        super.onCreate();
+
+        mViewModel = new AddEditTaskViewModel();
+
+        if (mTaskId == null) {
+            mViewModel.setOriginalTask(new Task("", ""));
+        } else {
+            // try fetching the task
+            mViewModel.setLoadingTask(true);
+            mTasksRepository.getTask(mTaskId, new TasksDataSource.GetTaskCallback() {
+                @Override
+                public void onDataNotAvailable() {
+                    sendToView(new ViewAction<AddEditTaskNewView>() {
+                        @Override
+                        public void call(final AddEditTaskNewView view) {
+                            view.showEmptyTaskError();
+                            mViewModel.setLoadingTask(false);
+                        }
+                    });
+                }
+
+                @Override
+                public void onTaskLoaded(final Task task) {
+                    mViewModel.setOriginalTask(task);
+                    mViewModel.setLoadingTask(false);
+                }
+            });
         }
-        mTasksRepository.saveTask(new Task(title, description, mTaskId));
-        mAddTaskView.showTasksList(); // After an edit, go back to the list.
+    }
+
+    private void bindViewModel(final AddEditTaskNewView view) {
+        view.setTitle(mViewModel.getTitle());
+        view.setDescription(mViewModel.getDescription());
+        view.showLoadingIndicator(mViewModel.isLoading());
     }
 }
