@@ -41,7 +41,6 @@ class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
         mViewModel.setTitle(title);
     }
 
-
     public void saveTask() {
         final AddEditTaskNewView view = getView();
         if (view == null) {

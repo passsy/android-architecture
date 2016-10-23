@@ -20,17 +20,20 @@ import com.example.android.architecture.blueprints.todoapp.data.Task;
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository;
 
+import net.grandcentrix.thirtyinch.test.TiPresenterInstructor;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for the implementation of {@link AddEditTaskPresenter}.
@@ -40,83 +43,180 @@ public class AddEditTaskPresenterTest {
     @Mock
     private TasksRepository mTasksRepository;
 
-    @Mock
-    private AddEditTaskContract.View mAddEditTaskView;
-
-    /**
-     * {@link ArgumentCaptor} is a powerful Mockito API to capture argument values and use them to
-     * perform further actions or assertions on them.
-     */
-    @Captor
-    private ArgumentCaptor<TasksDataSource.GetTaskCallback> mGetTaskCallbackCaptor;
-
-    private AddEditTaskPresenter mAddEditTaskPresenter;
-
     @Before
     public void setupMocksAndView() {
         // Mockito has a very convenient way to inject mocks by using the @Mock annotation. To
         // inject the mocks in the test the initMocks method needs to be called.
         MockitoAnnotations.initMocks(this);
-
-        // The presenter wont't update the view unless it's active.
-        when(mAddEditTaskView.isActive()).thenReturn(true);
     }
 
     @Test
     public void saveNewTaskToRepository_showsSuccessMessageUi() {
         // Get a reference to the class under test
-        mAddEditTaskPresenter = new AddEditTaskPresenter("1", mTasksRepository, mAddEditTaskView);
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter(null, mTasksRepository);
+        final TiPresenterInstructor<AddEditTaskNewView> instructor
+                = new TiPresenterInstructor<>(presenter);
+
+        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        instructor.attachView(view);
+
+        // When the user changes the task fields
+        presenter.onTitleChanges("New Task Title");
+        presenter.onDescriptionChanges("Some Task Description");
 
         // When the presenter is asked to save a task
-        mAddEditTaskPresenter.saveTask("New Task Title", "Some Task Description");
+        presenter.saveTask();
 
         // Then a task is saved in the repository and the view updated
         verify(mTasksRepository).saveTask(any(Task.class)); // saved to the model
-        verify(mAddEditTaskView).showTasksList(); // shown in the UI
+        verify(view).showTasksList(); // shown in the UI
     }
 
     @Test
     public void saveTask_emptyTaskShowsErrorUi() {
         // Get a reference to the class under test
-        mAddEditTaskPresenter = new AddEditTaskPresenter(null, mTasksRepository, mAddEditTaskView);
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter(null, mTasksRepository);
+        final TiPresenterInstructor<AddEditTaskNewView> instructor
+                = new TiPresenterInstructor<>(presenter);
+
+        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        instructor.attachView(view);
 
         // When the presenter is asked to save an empty task
-        mAddEditTaskPresenter.saveTask("", "");
+        presenter.saveTask();
 
         // Then an empty not error is shown in the UI
-        verify(mAddEditTaskView).showEmptyTaskError();
+        verify(view).showEmptyTaskError();
     }
 
     @Test
-    public void saveExistingTaskToRepository_showsSuccessMessageUi() {
-        // Get a reference to the class under test
-        mAddEditTaskPresenter = new AddEditTaskPresenter("1", mTasksRepository, mAddEditTaskView);
+    public void loadNonExistentTask_showsErrorMessageUi() {
 
-        // When the presenter is asked to save an existing task
-        mAddEditTaskPresenter.saveTask("New Task Title", "Some Task Description");
 
-        // Then a task is saved in the repository and the view updated
-        verify(mTasksRepository).saveTask(any(Task.class)); // saved to the model
-        verify(mAddEditTaskView).showTasksList(); // shown in the UI
+        // Get a reference to the class under test, loading task which id doesn't exits
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
+        final TiPresenterInstructor<AddEditTaskNewView> instructor
+                = new TiPresenterInstructor<>(presenter);
+
+        // When task is requested and view is attached
+        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        instructor.attachView(view);
+
+        // Return error when queried for a task
+        final ArgumentCaptor<TasksDataSource.GetTaskCallback> captor =
+                ArgumentCaptor.forClass(TasksDataSource.GetTaskCallback.class);
+        verify(mTasksRepository).getTask(anyString(), captor.capture());
+        // Simulate callback
+        captor.getValue().onDataNotAvailable();
+
+        // Then a error is shown
+        verify(view).showEmptyTaskError();
     }
 
     @Test
     public void populateTask_callsRepoAndUpdatesView() {
-        Task testTask = new Task("TITLE", "DESCRIPTION");
+
         // Get a reference to the class under test
-        mAddEditTaskPresenter = new AddEditTaskPresenter(testTask.getId(),
-                mTasksRepository, mAddEditTaskView);
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
+        final TiPresenterInstructor<AddEditTaskNewView> instructor
+                = new TiPresenterInstructor<>(presenter);
 
-        // When the presenter is asked to populate an existing task
-        mAddEditTaskPresenter.populateTask();
+        // When task is requested and view is attached
+        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        instructor.attachView(view);
 
-        // Then the task repository is queried and the view updated
-        verify(mTasksRepository).getTask(eq(testTask.getId()), mGetTaskCallbackCaptor.capture());
+        verify(view).setTitle("");
+        verify(view).setDescription("");
+        verify(view).showLoadingIndicator(true);
+
+        // get fake task from repository
+        final ArgumentCaptor<TasksDataSource.GetTaskCallback> captor =
+                ArgumentCaptor.forClass(TasksDataSource.GetTaskCallback.class);
+        verify(mTasksRepository).getTask(eq("1"), captor.capture());
 
         // Simulate callback
-        mGetTaskCallbackCaptor.getValue().onTaskLoaded(testTask);
+        final Task testTask = new Task("TITLE", "DESCRIPTION");
+        captor.getValue().onTaskLoaded(testTask);
 
-        verify(mAddEditTaskView).setTitle(testTask.getTitle());
-        verify(mAddEditTaskView).setDescription(testTask.getDescription());
+        // Then the task repository is queried and the view updated
+        verify(view).showLoadingIndicator(false);
+        verify(view, atLeastOnce()).setTitle(testTask.getTitle());
+        verify(view, atLeastOnce()).setDescription(testTask.getDescription());
+    }
+
+    @Test
+    public void saveTaskWhenStillLoading_showError() {
+
+        // Get a reference to the class under test
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
+        final TiPresenterInstructor<AddEditTaskNewView> instructor
+                = new TiPresenterInstructor<>(presenter);
+
+        // When task is requested and view is attached
+        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        instructor.attachView(view);
+
+        verify(view).setTitle("");
+        verify(view).setDescription("");
+
+        // And the request is still loading
+        final ArgumentCaptor<TasksDataSource.GetTaskCallback> captor =
+                ArgumentCaptor.forClass(TasksDataSource.GetTaskCallback.class);
+        verify(mTasksRepository).getTask(eq("1"), captor.capture());
+
+        // And the user saves the task
+        presenter.saveTask();
+
+        // Then show error
+        verify(view, atLeastOnce()).showLoadingIndicator(true);
+        verify(view).showEmptyTaskError();
+    }
+
+
+    @Test
+    public void attachNewViewToLoadedAndEditedTask_UpdateUiAccordingly() {
+
+        // Get a reference to the class under test
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
+        final TiPresenterInstructor<AddEditTaskNewView> instructor
+                = new TiPresenterInstructor<>(presenter);
+
+        // When task is requested and view is attached
+        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        instructor.attachView(view);
+
+        verify(view).setTitle("");
+        verify(view).setDescription("");
+
+        // get fake task from repository
+        final ArgumentCaptor<TasksDataSource.GetTaskCallback> captor =
+                ArgumentCaptor.forClass(TasksDataSource.GetTaskCallback.class);
+        verify(mTasksRepository).getTask(eq("1"), captor.capture());
+
+        // Simulate callback
+        final Task testTask = new Task("TITLE", "DESCRIPTION");
+        captor.getValue().onTaskLoaded(testTask);
+
+        // Then the task repository is queried and the view updated
+        verify(view, atLeastOnce()).setTitle(testTask.getTitle());
+        verify(view, atLeastOnce()).setDescription(testTask.getDescription());
+
+        // When the user edits the data
+        presenter.onTitleChanges("a");
+        presenter.onDescriptionChanges("b");
+
+        // and a new view gets attached
+        final AddEditTaskNewView secondView = mock(AddEditTaskNewView.class);
+        instructor.attachView(secondView);
+
+        // Then the UI doesn't load the task from the repository but shows the edited data
+        verify(secondView).setTitle("a");
+        verify(secondView).setDescription("b");
+
+        // When saving the data
+        presenter.saveTask();
+
+        // Then the edited data is stored in the repository
+        verify(mTasksRepository).saveTask(new Task("a", "b", testTask.getId()));
     }
 }
