@@ -1,13 +1,13 @@
 package com.example.android.architecture.blueprints.todoapp.addedittask;
 
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.example.android.architecture.blueprints.todoapp.base.BaseTiPresenter;
 import com.example.android.architecture.blueprints.todoapp.base.NotifyChangeListener;
 import com.example.android.architecture.blueprints.todoapp.data.Task;
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
-
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -28,7 +28,7 @@ class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
      * @param tasksRepository a repository of data for tasks
      */
     public AddEditTaskPresenter(@Nullable String taskId,
-            @NonNull TasksDataSource tasksRepository) {
+                                @NonNull TasksDataSource tasksRepository) {
         mTaskId = taskId;
         mTasksRepository = checkNotNull(tasksRepository);
     }

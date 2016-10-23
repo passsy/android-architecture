@@ -1,12 +1,6 @@
 package com.example.android.architecture.blueprints.todoapp.addedittask;
 
 
-import com.example.android.architecture.blueprints.todoapp.Injection;
-import com.example.android.architecture.blueprints.todoapp.R;
-import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository;
-
-import net.grandcentrix.thirtyinch.TiActivity;
-
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -18,6 +12,12 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.TextView;
+
+import com.example.android.architecture.blueprints.todoapp.Injection;
+import com.example.android.architecture.blueprints.todoapp.R;
+import com.example.android.architecture.blueprints.todoapp.data.source.TasksRepository;
+
+import net.grandcentrix.thirtyinch.TiActivity;
 
 /**
  * Displays an add or edit task screen.
@@ -117,13 +117,13 @@ public class AddEditTaskActivity
 
             @Override
             public void beforeTextChanged(final CharSequence s, final int start, final int count,
-                    final int after) {
+                                          final int after) {
 
             }
 
             @Override
             public void onTextChanged(final CharSequence s, final int start, final int before,
-                    final int count) {
+                                      final int count) {
 
             }
         });
@@ -136,13 +136,13 @@ public class AddEditTaskActivity
 
             @Override
             public void beforeTextChanged(final CharSequence s, final int start, final int count,
-                    final int after) {
+                                          final int after) {
 
             }
 
             @Override
             public void onTextChanged(final CharSequence s, final int start, final int before,
-                    final int count) {
+                                      final int count) {
 
             }
         });

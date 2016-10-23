@@ -16,16 +16,16 @@
 
 package com.example.android.architecture.blueprints.todoapp.addedittask;
 
+import android.support.test.espresso.intent.rule.IntentsTestRule;
+import android.support.test.rule.ActivityTestRule;
+import android.support.test.runner.AndroidJUnit4;
+import android.test.suitebuilder.annotation.LargeTest;
+
 import com.example.android.architecture.blueprints.todoapp.R;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import android.support.test.espresso.intent.rule.IntentsTestRule;
-import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
-import android.test.suitebuilder.annotation.LargeTest;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.clearText;
@@ -44,7 +44,7 @@ public class AddEditTaskScreenTest {
     /**
      * {@link IntentsTestRule} is an {@link ActivityTestRule} which inits and releases Espresso
      * Intents before and after each test run.
-     *
+     * <p>
      * <p>
      * Rules are interceptors which are executed for each test method and are important building
      * blocks of Junit tests.
