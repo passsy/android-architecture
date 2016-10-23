@@ -16,28 +16,23 @@
 
 package com.example.android.architecture.blueprints.todoapp.addedittask;
 
-import static android.support.test.espresso.Espresso.onView;
-import static android.support.test.espresso.action.ViewActions.clearText;
-import static android.support.test.espresso.action.ViewActions.click;
-import static android.support.test.espresso.action.ViewActions.closeSoftKeyboard;
-import static android.support.test.espresso.action.ViewActions.typeText;
-import static android.support.test.espresso.assertion.ViewAssertions.matches;
-import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static android.support.test.espresso.matcher.ViewMatchers.withId;
+import com.example.android.architecture.blueprints.todoapp.R;
 
-import android.support.test.espresso.Espresso;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
 
-import com.example.android.architecture.blueprints.todoapp.R;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.clearText;
+import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
 /**
  * Tests for the add task screen.
@@ -58,18 +53,6 @@ public class AddEditTaskScreenTest {
     public IntentsTestRule<AddEditTaskActivity> mAddTaskIntentsTestRule =
             new IntentsTestRule<>(AddEditTaskActivity.class);
 
-    /**
-     * Prepare your test fixture for this test. In this case we register an IdlingResources with
-     * Espresso. IdlingResource resource is a great way to tell Espresso when your app is in an
-     * idle state. This helps Espresso to synchronize your test actions, which makes tests significantly
-     * more reliable.
-     */
-    @Before
-    public void registerIdlingResource() {
-        Espresso.registerIdlingResources(
-                mAddTaskIntentsTestRule.getActivity().getCountingIdlingResource());
-    }
-
     @Test
     public void emptyTask_isNotSaved() {
         // Add invalid title and description combination
@@ -80,14 +63,5 @@ public class AddEditTaskScreenTest {
 
         // Verify that the activity is still displayed (a correct task would close it).
         onView(withId(R.id.add_task_title)).check(matches(isDisplayed()));
-    }
-
-    /**
-     * Unregister your Idling Resource so it can be garbage collected and does not leak any memory.
-     */
-    @After
-    public void unregisterIdlingResource() {
-        Espresso.unregisterIdlingResources(
-                mAddTaskIntentsTestRule.getActivity().getCountingIdlingResource());
     }
 }
