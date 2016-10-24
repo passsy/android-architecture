@@ -24,7 +24,7 @@ import net.grandcentrix.thirtyinch.distinctuntilchanged.EqualsComparator;
 /**
  * View interface specifying the functionality of the view
  */
-interface AddEditTaskNewView extends TiView {
+interface AddEditTaskView extends TiView {
 
     @CallOnMainThread
     @DistinctUntilChanged

@@ -78,6 +78,7 @@ dependencies {
     testCompile "junit:junit:$rootProject.ext.junitVersion"
     testCompile "org.mockito:mockito-all:$rootProject.ext.mockitoVersion"
     testCompile "org.hamcrest:hamcrest-all:$rootProject.ext.hamcrestVersion"
+    testCompile "org.assertj:assertj-core:$rootProject.ext.assertjVersion"
     testCompile "net.grandcentrix.thirtyinch:thirtyinch-test:$rootProject.ext.thirtyinchVersion"
 
     // Android Testing Support Library's runner and rules

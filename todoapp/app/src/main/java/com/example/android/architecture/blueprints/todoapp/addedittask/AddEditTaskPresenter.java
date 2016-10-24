@@ -11,7 +11,7 @@ import com.example.android.architecture.blueprints.todoapp.data.source.TasksData
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
+class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskView> {
 
     @Nullable
     private final String mTaskId;
@@ -27,22 +27,35 @@ class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
      * @param taskId          ID of the task to edit or null for a new task
      * @param tasksRepository a repository of data for tasks
      */
-    public AddEditTaskPresenter(@Nullable String taskId,
-                                @NonNull TasksDataSource tasksRepository) {
+    AddEditTaskPresenter(@Nullable String taskId,
+                         @NonNull TasksDataSource tasksRepository) {
         mTaskId = taskId;
         mTasksRepository = checkNotNull(tasksRepository);
     }
 
-    public void onDescriptionChanges(final String description) {
+    /**
+     * View informs presenter about text changes of the description
+     *
+     * @param description new description text
+     */
+    void onDescriptionChanges(final String description) {
         mViewModel.setDescription(description);
     }
 
-    public void onTitleChanges(final String title) {
+    /**
+     * View informs presenter about text changes of the title
+     *
+     * @param title new title
+     */
+    void onTitleChanges(final String title) {
         mViewModel.setTitle(title);
     }
 
-    public void saveTask() {
-        final AddEditTaskNewView view = getView();
+    /**
+     * User triggers the save action
+     */
+    void saveTask() {
+        final AddEditTaskView view = getView();
         if (view == null) {
             throw new IllegalStateException(
                     "call this from the view, therefore view is expected to be non null");
@@ -71,7 +84,7 @@ class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
     }
 
     @Override
-    protected void onAttachView(@NonNull final AddEditTaskNewView view) {
+    protected void onAttachView(@NonNull final AddEditTaskView view) {
         super.onAttachView(view);
 
         // immediately bind the viewmodel to the view, calls for every change
@@ -93,29 +106,33 @@ class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskNewView> {
             mViewModel.setOriginalTask(new Task("", ""));
         } else {
             // try fetching the task
-            mViewModel.setLoadingTask(true);
-            mTasksRepository.getTask(mTaskId, new TasksDataSource.GetTaskCallback() {
-                @Override
-                public void onDataNotAvailable() {
-                    sendToView(new ViewAction<AddEditTaskNewView>() {
-                        @Override
-                        public void call(final AddEditTaskNewView view) {
-                            view.showEmptyTaskError();
-                            mViewModel.setLoadingTask(false);
-                        }
-                    });
-                }
-
-                @Override
-                public void onTaskLoaded(final Task task) {
-                    mViewModel.setOriginalTask(task);
-                    mViewModel.setLoadingTask(false);
-                }
-            });
+            loadTask(mTaskId);
         }
     }
 
-    private void bindViewModel(final AddEditTaskNewView view) {
+    private void loadTask(final String taskId) {
+        mViewModel.setLoadingTask(true);
+        mTasksRepository.getTask(taskId, new TasksDataSource.GetTaskCallback() {
+            @Override
+            public void onDataNotAvailable() {
+                sendToView(new ViewAction<AddEditTaskView>() {
+                    @Override
+                    public void call(final AddEditTaskView view) {
+                        view.showEmptyTaskError();
+                        mViewModel.setLoadingTask(false);
+                    }
+                });
+            }
+
+            @Override
+            public void onTaskLoaded(final Task task) {
+                mViewModel.setOriginalTask(task);
+                mViewModel.setLoadingTask(false);
+            }
+        });
+    }
+
+    private void bindViewModel(final AddEditTaskView view) {
         view.setTitle(mViewModel.getTitle());
         view.setDescription(mViewModel.getDescription());
         view.showLoadingIndicator(mViewModel.isLoading());

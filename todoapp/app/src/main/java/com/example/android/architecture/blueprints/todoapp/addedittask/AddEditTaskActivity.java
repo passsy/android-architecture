@@ -23,8 +23,8 @@ import net.grandcentrix.thirtyinch.TiActivity;
  * Displays an add or edit task screen.
  */
 public class AddEditTaskActivity
-        extends TiActivity<AddEditTaskPresenter, AddEditTaskNewView>
-        implements AddEditTaskNewView {
+        extends TiActivity<AddEditTaskPresenter, AddEditTaskView>
+        implements AddEditTaskView {
 
     public static final String ARGUMENT_EDIT_TASK_ID = "EDIT_TASK_ID";
 

@@ -28,6 +28,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import static junit.framework.Assert.fail;
+import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -54,10 +56,10 @@ public class AddEditTaskPresenterTest {
     public void saveNewTaskToRepository_showsSuccessMessageUi() {
         // Get a reference to the class under test
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter(null, mTasksRepository);
-        final TiPresenterInstructor<AddEditTaskNewView> instructor
+        final TiPresenterInstructor<AddEditTaskView> instructor
                 = new TiPresenterInstructor<>(presenter);
 
-        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        final AddEditTaskView view = mock(AddEditTaskView.class);
         instructor.attachView(view);
 
         // When the user changes the task fields
@@ -76,10 +78,10 @@ public class AddEditTaskPresenterTest {
     public void saveTask_emptyTaskShowsErrorUi() {
         // Get a reference to the class under test
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter(null, mTasksRepository);
-        final TiPresenterInstructor<AddEditTaskNewView> instructor
+        final TiPresenterInstructor<AddEditTaskView> instructor
                 = new TiPresenterInstructor<>(presenter);
 
-        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        final AddEditTaskView view = mock(AddEditTaskView.class);
         instructor.attachView(view);
 
         // When the presenter is asked to save an empty task
@@ -95,11 +97,11 @@ public class AddEditTaskPresenterTest {
 
         // Get a reference to the class under test, loading task which id doesn't exits
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
-        final TiPresenterInstructor<AddEditTaskNewView> instructor
+        final TiPresenterInstructor<AddEditTaskView> instructor
                 = new TiPresenterInstructor<>(presenter);
 
         // When task is requested and view is attached
-        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        final AddEditTaskView view = mock(AddEditTaskView.class);
         instructor.attachView(view);
 
         // Return error when queried for a task
@@ -118,11 +120,11 @@ public class AddEditTaskPresenterTest {
 
         // Get a reference to the class under test
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
-        final TiPresenterInstructor<AddEditTaskNewView> instructor
+        final TiPresenterInstructor<AddEditTaskView> instructor
                 = new TiPresenterInstructor<>(presenter);
 
         // When task is requested and view is attached
-        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        final AddEditTaskView view = mock(AddEditTaskView.class);
         instructor.attachView(view);
 
         verify(view).setTitle("");
@@ -149,11 +151,11 @@ public class AddEditTaskPresenterTest {
 
         // Get a reference to the class under test
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
-        final TiPresenterInstructor<AddEditTaskNewView> instructor
+        final TiPresenterInstructor<AddEditTaskView> instructor
                 = new TiPresenterInstructor<>(presenter);
 
         // When task is requested and view is attached
-        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        final AddEditTaskView view = mock(AddEditTaskView.class);
         instructor.attachView(view);
 
         verify(view).setTitle("");
@@ -178,11 +180,11 @@ public class AddEditTaskPresenterTest {
 
         // Get a reference to the class under test
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
-        final TiPresenterInstructor<AddEditTaskNewView> instructor
+        final TiPresenterInstructor<AddEditTaskView> instructor
                 = new TiPresenterInstructor<>(presenter);
 
         // When task is requested and view is attached
-        final AddEditTaskNewView view = mock(AddEditTaskNewView.class);
+        final AddEditTaskView view = mock(AddEditTaskView.class);
         instructor.attachView(view);
 
         verify(view).setTitle("");
@@ -206,7 +208,7 @@ public class AddEditTaskPresenterTest {
         presenter.onDescriptionChanges("b");
 
         // and a new view gets attached
-        final AddEditTaskNewView secondView = mock(AddEditTaskNewView.class);
+        final AddEditTaskView secondView = mock(AddEditTaskView.class);
         instructor.attachView(secondView);
 
         // Then the UI doesn't load the task from the repository but shows the edited data
@@ -218,5 +220,20 @@ public class AddEditTaskPresenterTest {
 
         // Then the edited data is stored in the repository
         verify(mTasksRepository).saveTask(new Task("a", "b", testTask.getId()));
+    }
+
+    @Test
+    public void saveTaskWithDetachedView_Throw() throws Exception {
+        final AddEditTaskPresenter presenter = new AddEditTaskPresenter(null, mTasksRepository);
+
+        try {
+            presenter.saveTask();
+            fail("did not throw");
+        } catch (Exception e) {
+            assertThat(e)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("view")
+                    .hasMessageContaining("null");
+        }
     }
 }
