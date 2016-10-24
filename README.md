@@ -14,3 +14,6 @@ Sample implementation of the of the TODO-MVP app from google with [ThirtyInch](h
 
 
 
+## Compile
+
+This project may not compile for you. It's build on top of the future ThirtyInch `0.8.0` release which is only available as local snapshots right now.
