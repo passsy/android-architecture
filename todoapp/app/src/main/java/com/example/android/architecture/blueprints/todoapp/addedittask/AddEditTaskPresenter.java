@@ -4,14 +4,16 @@ package com.example.android.architecture.blueprints.todoapp.addedittask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.example.android.architecture.blueprints.todoapp.base.BaseTiPresenter;
 import com.example.android.architecture.blueprints.todoapp.base.NotifyChangeListener;
 import com.example.android.architecture.blueprints.todoapp.data.Task;
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
 
+import net.grandcentrix.thirtyinch.TiPresenter;
+import net.grandcentrix.thirtyinch.ViewAction;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
-class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskView> {
+class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
 
     @Nullable
     private final String mTaskId;
