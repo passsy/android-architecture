@@ -97,6 +97,12 @@ class AddEditTaskPresenter extends BaseTiPresenter<AddEditTaskView> {
     }
 
     @Override
+    protected void onDetachView() {
+        super.onDetachView();
+        mViewModel.setOnChangeListener(null);
+    }
+
+    @Override
     protected void onCreate() {
         super.onCreate();
 

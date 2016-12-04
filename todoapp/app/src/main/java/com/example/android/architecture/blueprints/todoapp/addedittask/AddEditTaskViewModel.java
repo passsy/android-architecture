@@ -58,7 +58,9 @@ class AddEditTaskViewModel {
     public void setOnChangeListener(
             final NotifyChangeListener<AddEditTaskViewModel> onChangeListener) {
         mNotifyChangeListener = onChangeListener;
-        mNotifyChangeListener.onChange(this);
+        if (mNotifyChangeListener != null) {
+            mNotifyChangeListener.onChange(this);
+        }
     }
 
     private void notifyChange() {
