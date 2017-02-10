@@ -40,5 +40,5 @@ ext {
     runnerVersion = '0.5'
     rulesVersion = '0.5'
     espressoVersion = '2.2.2'
-    thirtyinchVersion = '0.8.0-rc1'
+    thirtyinchVersion = '0.8.0-rc3'
 }

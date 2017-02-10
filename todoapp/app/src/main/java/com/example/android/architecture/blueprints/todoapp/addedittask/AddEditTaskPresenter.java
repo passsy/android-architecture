@@ -4,16 +4,17 @@ package com.example.android.architecture.blueprints.todoapp.addedittask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.example.android.architecture.blueprints.todoapp.base.NotifyChangeListener;
 import com.example.android.architecture.blueprints.todoapp.data.Task;
 import com.example.android.architecture.blueprints.todoapp.data.source.TasksDataSource;
 
 import net.grandcentrix.thirtyinch.TiPresenter;
 import net.grandcentrix.thirtyinch.ViewAction;
+import net.grandcentrix.thirtyinch.viewmodel.ViewRenderer;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
+class AddEditTaskPresenter extends TiPresenter<AddEditTaskView>
+        implements ViewRenderer.RenderFunc<AddEditTaskView, AddEditTaskViewModel> {
 
     @Nullable
     private final String mTaskId;
@@ -21,7 +22,8 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
     @NonNull
     private final TasksDataSource mTasksRepository;
 
-    private AddEditTaskViewModel mViewModel;
+    private final ViewRenderer<AddEditTaskView, AddEditTaskViewModel> mRenderer =
+            new ViewRenderer<>(this, new AddEditTaskViewModel(), this);
 
     /**
      * Creates a presenter for the add/edit view.
@@ -41,7 +43,7 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
      * @param description new description text
      */
     void onDescriptionChanges(final String description) {
-        mViewModel.setDescription(description);
+        mRenderer.getViewModel().setDescription(description);
     }
 
     /**
@@ -50,7 +52,7 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
      * @param title new title
      */
     void onTitleChanges(final String title) {
-        mViewModel.setTitle(title);
+        mRenderer.getViewModel().setTitle(title);
     }
 
     /**
@@ -63,15 +65,15 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
                     "call this from the view, therefore view is expected to be non null");
         }
 
-        final Task task = mViewModel.getOriginalTask();
+        final Task task = mRenderer.getViewModel().getOriginalTask();
         if (task == null) {
             // not loaded
             view.showEmptyTaskError();
         } else {
             // create new task with same id
             final Task newTask = new Task(
-                    mViewModel.getTitle(),
-                    mViewModel.getDescription(),
+                    mRenderer.getViewModel().getTitle(),
+                    mRenderer.getViewModel().getDescription(),
                     task.getId());
 
             if (newTask.isEmpty()) {
@@ -86,32 +88,12 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
     }
 
     @Override
-    protected void onAttachView(@NonNull final AddEditTaskView view) {
-        super.onAttachView(view);
-
-        // immediately bind the viewmodel to the view, calls for every change
-        mViewModel.setOnChangeListener(new NotifyChangeListener<AddEditTaskViewModel>() {
-            @Override
-            public void onChange(final AddEditTaskViewModel addEditTaskViewModel) {
-                bindViewModel(view);
-            }
-        });
-    }
-
-    @Override
-    protected void onDetachView() {
-        super.onDetachView();
-        mViewModel.setOnChangeListener(null);
-    }
-
-    @Override
     protected void onCreate() {
         super.onCreate();
 
-        mViewModel = new AddEditTaskViewModel();
-
         if (mTaskId == null) {
-            mViewModel.setOriginalTask(new Task("", ""));
+            mRenderer.getViewModel().setOriginalTask(new Task("", ""));
+            mRenderer.invalidate();
         } else {
             // try fetching the task
             loadTask(mTaskId);
@@ -119,7 +101,9 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
     }
 
     private void loadTask(final String taskId) {
-        mViewModel.setLoadingTask(true);
+        mRenderer.getViewModel().setLoadingTask(true);
+        mRenderer.invalidate();
+
         mTasksRepository.getTask(taskId, new TasksDataSource.GetTaskCallback() {
             @Override
             public void onDataNotAvailable() {
@@ -127,22 +111,25 @@ class AddEditTaskPresenter extends TiPresenter<AddEditTaskView> {
                     @Override
                     public void call(final AddEditTaskView view) {
                         view.showEmptyTaskError();
-                        mViewModel.setLoadingTask(false);
+                        mRenderer.getViewModel().setLoadingTask(false);
+                        mRenderer.invalidate();
                     }
                 });
             }
 
             @Override
             public void onTaskLoaded(final Task task) {
-                mViewModel.setOriginalTask(task);
-                mViewModel.setLoadingTask(false);
+                mRenderer.getViewModel().setOriginalTask(task);
+                mRenderer.getViewModel().setLoadingTask(false);
+                mRenderer.invalidate();
             }
         });
     }
 
-    private void bindViewModel(final AddEditTaskView view) {
-        view.setTitle(mViewModel.getTitle());
-        view.setDescription(mViewModel.getDescription());
-        view.showLoadingIndicator(mViewModel.isLoading());
+    @Override
+    public void render(@NonNull AddEditTaskView view, @NonNull AddEditTaskViewModel viewModel) {
+        view.setTitle(viewModel.getTitle());
+        view.setDescription(viewModel.getDescription());
+        view.showLoadingIndicator(viewModel.isLoading());
     }
 }
