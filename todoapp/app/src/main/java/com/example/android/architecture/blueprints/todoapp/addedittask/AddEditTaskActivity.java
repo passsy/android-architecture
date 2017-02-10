@@ -80,6 +80,8 @@ public class AddEditTaskActivity
 
     @Override
     public void showTasksList() {
+        // edited, detail view will then automatically forward to list
+        setResult(RESULT_OK);
         supportFinishAfterTransition();
     }
 
