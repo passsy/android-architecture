@@ -35,42 +35,29 @@ import net.grandcentrix.thirtyinch.TiView;
  */
 public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
 
-    public interface RenderFunc<V, VM> {
-
-        /**
-         * render the view which should represent the virtualView, will be called on the ui thread
-         */
-        void render(@NonNull final V view, @NonNull final VM viewModel);
-    }
-
+    @NonNull
+    private final TiPresenter<V> mPresenter;
+    /**
+     * render() function executing the rendering of the view based on the view model
+     */
+    private final RenderFunc<V, VM> mRenderBlock;
+    /**
+     * Lock synchronizing write access on {@link #mViewModel}, {@link #mIsRenderingPending} and
+     * {@link #mLastRenderedVirtualView}
+     */
+    private final Object mRenderingLock = new Object();
     /**
      * boolean flag indicating a rendering on the main thread is pending. It's therefore not
      * required to call runOnUiThread(() -> performRender(true)); again because a runnable already
      * got posted
      */
     private boolean mIsRenderingPending = false;
-
     /**
      * the last view model which got rendered. Used for checks with current view model, if both
      * are equal, render shouldn't be called
      */
     @Nullable
     private VM mLastRenderedVirtualView = null;
-
-    @NonNull
-    private final TiPresenter<V> mPresenter;
-
-    /**
-     * render() function executing the rendering of the view based on the view model
-     */
-    private final RenderFunc<V, VM> mRenderBlock;
-
-    /**
-     * Lock synchronizing write access on {@link #mViewModel}, {@link #mIsRenderingPending} and
-     * {@link #mLastRenderedVirtualView}
-     */
-    private final Object mRenderingLock = new Object();
-
     /**
      * The 1:1 representation of the View as pojo will be used to automatically call
      * render(Object, TiView) when the setter or {@link #invalidate()} gets
@@ -78,6 +65,11 @@ public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
      */
     @NonNull
     private VM mViewModel;
+
+    /**
+     * indicator for the next render that a force was queued
+     */
+    private boolean mForceQueued;
 
     public ViewRenderer(@NonNull final TiPresenter<V> presenter, @NonNull final VM
             initialViewModel, final RenderFunc<V, VM> renderBlock) {
@@ -91,6 +83,13 @@ public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
     @NonNull
     public VM getViewModel() {
         return mViewModel;
+    }
+
+    public void setViewModel(@NonNull final VM viewModel) {
+        synchronized (mRenderingLock) {
+            mViewModel = viewModel;
+            dispatchRender(false);
+        }
     }
 
     /**
@@ -120,13 +119,6 @@ public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
         }
     }
 
-    public void setViewModel(@NonNull final VM viewModel) {
-        synchronized (mRenderingLock) {
-            mViewModel = viewModel;
-            dispatchRender(false);
-        }
-    }
-
     /**
      * schedules a call to {@link #performRender(boolean)} on the ui thread, skips when a call to
      * render is already pending
@@ -136,7 +128,8 @@ public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
      */
     private void dispatchRender(final boolean force) {
         if (mPresenter.getView() == null) {
-            // rendering will be automatically triggered when the view attaches
+            // no view to render, rendering will be automatically triggered when the view attaches
+            mForceQueued = true;
             return;
         }
         synchronized (mRenderingLock) {
@@ -171,12 +164,13 @@ public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
                 final VM newViewModel = mViewModel;
                 final VM lastRenderedViewModel = mLastRenderedVirtualView;
 
-                if (!force) {
+                if (!(force || mForceQueued)) {
                     if (newViewModel.equals(lastRenderedViewModel)) {
                         // render not required, virtual view hasn't changed
                         return;
                     }
                 }
+                mForceQueued = false;
 
                 mRenderBlock.render(view, newViewModel);
                 mLastRenderedVirtualView = newViewModel;
@@ -184,5 +178,13 @@ public class ViewRenderer<V extends TiView, VM> implements TiLifecycleObserver {
                 mIsRenderingPending = false;
             }
         }
+    }
+
+    public interface RenderFunc<V, VM> {
+
+        /**
+         * render the view which should represent the virtualView, will be called on the ui thread
+         */
+        void render(@NonNull final V view, @NonNull final VM viewModel);
     }
 }

@@ -94,7 +94,6 @@ public class AddEditTaskPresenterTest {
     @Test
     public void loadNonExistentTask_showsErrorMessageUi() {
 
-
         // Get a reference to the class under test, loading task which id doesn't exits
         final AddEditTaskPresenter presenter = new AddEditTaskPresenter("1", mTasksRepository);
         final TiPresenterInstructor<AddEditTaskView> instructor
